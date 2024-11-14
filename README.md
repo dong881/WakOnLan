@@ -21,15 +21,21 @@
 
 ```bash
 sudo apt update
-sudo apt install etherwake curl netcat-openbsd
+sudo apt install etherwake curl netcat-openbsd flask RPi.GPIO
 ```
+### 遵循安裝手冊完整安裝影像辨識開燈專案
+```bash
+cd ..
+git clone https://github.com/dong881/VisionDetect_SmartDorm.git
+```
+
 
 ### 2. 設定環境變數
 
 在專案目錄下建立 .env 檔案，並加入以下內容來配置目標裝置的 MAC 位址和通知 URL：
 ```
+[DEFAULT]
 TARGET_MAC=<目標裝置的 MAC 位址，例如：xx:xx:xx:xx:xx:xx>
-NOTIFY_URL=<通知 URL，例如：https://script.google.com/macros/xxx>
 ```
 注意：為了安全性，.env 檔案不應該上傳至公開的版本控制系統，建議在專案目錄下新增 .gitignore 文件，並加入以下內容：
 

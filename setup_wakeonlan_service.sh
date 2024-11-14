@@ -2,33 +2,33 @@
 
 # Automatically get the current script directory
 SCRIPT_DIR=$(dirname "$(realpath "$0")")
-SERVICE_FILE="/etc/systemd/system/wakeonlan.service"
+SERVICE_FILE="/etc/systemd/system/dorm-control.service"
 
 # Step 1: Create the systemd service file with dynamic paths
 echo "Creating $SERVICE_FILE..."
 
 sudo bash -c "cat > $SERVICE_FILE" << EOL
 [Unit]
-Description=Wake On LAN Listener Service
+Description=Smart Dorm Control Service
 After=network.target
 
 [Service]
-ExecStart=$SCRIPT_DIR/wake_on_request.sh
-WorkingDirectory=$SCRIPT_DIR
+WorkingDirectory=/root/WakOnLan
+ExecStart=/bin/bash -c "source ../VisionDetect_SmartDorm/dorm/bin/activate && python3 ./app.py"
 Restart=always
-User=root
+RestartSec=3
 
 [Install]
 WantedBy=multi-user.target
 EOL
 
 # Step 2: Reload systemd, enable, and start the service
-echo "Reloading systemd, enabling and starting the wakeonlan service..."
+echo "Reloading systemd, enabling and starting the dorm-control service..."
 
 sudo systemctl daemon-reload
-sudo systemctl enable wakeonlan.service
-sudo systemctl start wakeonlan.service
+sudo systemctl enable dorm-control.service
+sudo systemctl start dorm-control.service
 
 # Step 3: Display the service status
-echo "Displaying the status of the wakeonlan service..."
-sudo systemctl status wakeonlan.service
+echo "Displaying the status of the dorm-control service..."
+sudo systemctl status dorm-control.service

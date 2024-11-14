@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智慧宿舍控制面板</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --success-color: #4CAF50;
+            --error-color: #ef233c;
+            --warning-color: #ff9f1c;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #2b2d42;
+            --border-radius: 12px;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .header i {
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            margin-right: 1rem;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .switch-card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .switch-container {
+            position: relative;
+            width: 100%;
+            height: 60px;
+            background: #e9ecef;
+            border-radius: 30px;
+            margin: 1.5rem 0;
+            cursor: pointer;
+            user-select: none;
+            overflow: hidden;
+        }
+
+        .switch {
+            position: relative;
+            height: 100%;
+            display: flex;
+            align-items: center;
+        }
+
+        .labels {
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .label-item {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #666;
+            transition: var(--transition);
+        }
+
+        .label-item.active {
+            color: white;
+        }
+
+        .slider {
+            position: absolute;
+            left: 0;
+            top: 5px;
+            width: 33.33%;
+            height: calc(100% - 10px);
+            border-radius: 28px;
+            transition: var(--transition);
+        }
+
+        .slider.off {
+            background-color: var(--error-color);
+            box-shadow: 0 0 15px rgba(239, 35, 60, 0.3);
+        }
+
+        .slider.auto {
+            background-color: var(--primary-color);
+            box-shadow: 0 0 15px rgba(67, 97, 238, 0.3);
+        }
+
+        .slider.on {
+            background-color: var(--success-color);
+            box-shadow: 0 0 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .status-section {
+            margin-top: 2rem;
+        }
+
+        .status-card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            transition: var(--transition);
+        }
+
+        .online {
+            background-color: var(--success-color);
+            box-shadow: 0 0 8px var(--success-color);
+        }
+
+        .offline {
+            background-color: var(--error-color);
+            box-shadow: 0 0 8px var(--error-color);
+        }
+
+        .wol-button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            padding: 0.8rem 1.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .wol-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .wol-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+        }
+
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .loading-text {
+            display: none;
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            text-align: center;
+        }
+
+        .message {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            background-color: rgba(67, 97, 238, 0.1);
+            color: var(--primary-color);
+            display: none;
+            text-align: center;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                margin: 1rem auto;
+            }
+            .card {
+                padding: 1.5rem;
+            }
+            .label-item {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <i class="fas fa-home"></i>
+                <h1>智慧宿舍控制面板</h1>
+            </div>
+
+            <div class="switch-card">
+                <div class="switch-container">
+                    <div id="stateSwitch" class="switch">
+                        <div class="labels">
+                            <div class="label-item">關閉</div>
+                            <div class="label-item">自動</div>
+                            <div class="label-item">開啟</div>
+                        </div>
+                        <div class="slider auto"></div>
+                    </div>
+                </div>
+                <div id="status" style="text-align: center; color: #666;">
+                    目前模式：自動
+                </div>
+            </div>
+
+            <div class="status-section">
+                <div class="status-card">
+                    <div class="status-info">
+                        <i class="fas fa-desktop"></i>
+                        <span>電腦狀態</span>
+                        <span id="pcStatus" class="status-indicator offline"></span>
+                    </div>
+                    <button id="wolButton" class="wol-button">
+                        <i class="fas fa-power-off"></i>
+                        <span>喚醒電腦</span>
+                        <div id="spinner" class="spinner"></div>
+                    </button>
+                </div>
+                <div id="loadingText" class="loading-text">
+                    <i class="fas fa-sync-alt fa-spin"></i>
+                    正在喚醒電腦，請稍候...
+                </div>
+                <div id="message" class="message"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const switchElem = document.getElementById('stateSwitch');
+        const sliderElem = switchElem.querySelector('.slider');
+        const statusElem = document.getElementById('status');
+        const pcStatusElem = document.getElementById('pcStatus');
+        const messageElem = document.getElementById('message');
+        const wolButton = document.getElementById('wolButton');
+        const spinner = document.getElementById('spinner');
+        const loadingText = document.getElementById('loadingText');
+        const labels = switchElem.querySelectorAll('.label-item');
+
+        let currentState = 'AUTO';
+        let isWaking = false;
+        let checkStatusInterval;
+
+        // 修正狀態切換位置
+        const positions = {
+            'OFF': '0%',
+            'AUTO': '33.33%',
+            'ON': '66.66%'
+        };
+
+        const stateLabels = {
+            'OFF': '關閉',
+            'AUTO': '自動',
+            'ON': '開啟'
+        };
+
+        // 更新狀態
+        function updateState(state) {
+            currentState = state;
+            sliderElem.style.left = positions[state];
+            statusElem.textContent = `目前模式：${stateLabels[state]}`;
+            
+            // 更新滑塊顏色
+            sliderElem.className = 'slider ' + state.toLowerCase();
+            
+            // 更新標籤狀態
+            labels.forEach((label, index) => {
+                const labelStates = ['OFF', 'AUTO', 'ON'];
+                label.classList.toggle('active', labelStates[index] === state);
+            });
+        }
+
+        // 初始化
+        async function init() {
+            try {
+                const response = await fetch('/api/state');
+                const data = await response.json();
+                updateState(data.state);
+                updatePCStatus(data.pc_status);
+            } catch (error) {
+                console.error('初始化失敗:', error);
+                showMessage('系統初始化失敗，請重新整理頁面', 'error');
+            }
+        }
+
+        // 更新電腦狀態
+        function updatePCStatus(status) {
+            pcStatusElem.className = `status-indicator ${status ? 'online' : 'offline'}`;
+            wolButton.disabled = status || isWaking;
+        }
+
+        // 顯示訊息
+        function showMessage(text, type = 'info') {
+            messageElem.textContent = text;
+            messageElem.style.display = 'block';
+            messageElem.style.backgroundColor = type === 'error' ? 'rgba(239, 35, 60, 0.1)' : 'rgba(67, 97, 238, 0.1)';
+            messageElem.style.color = type === 'error' ? 'var(--error-color)' : 'var(--primary-color)';
+        }
+
+        // 切換狀態
+        switchElem.addEventListener('click', async (e) => {
+            const rect = switchElem.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const width = rect.width;
+            let newState;
+
+            if (x < width / 3) newState = 'OFF';
+            else if (x < (width * 2) / 3) newState = 'AUTO';
+            else newState = 'ON';
+
+            try {
+                const response = await fetch(`/api/state/${newState}`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    updateState(newState);
+                    showMessage(`已切換至${stateLabels[newState]}模式`);
+                }
+            } catch (error) {
+                console.error('狀態切換失敗:', error);
+                showMessage('狀態切換失敗，請稍後重試', 'error');
+            }
+        });
+
+        // 喚醒電腦
+        wolButton.addEventListener('click', async () => {
+            if (isWaking) return;
+
+            isWaking = true;
+            wolButton.disabled = true;
+            spinner.style.display = 'inline-block';
+            loadingText.style.display = 'block';
+            messageElem.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/wol', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    showMessage(data.message);
+                    startStatusCheck();
+                } else {
+                    showMessage('喚醒失敗，請稍後重試', 'error');
+                    stopWaking();
+                }
+            } catch (error) {
+                console.error('喚醒請求失敗:', error);
+                showMessage('喚醒請求失敗，請稍後重試', 'error');
+                stopWaking();
+            }
+        });
+
+        // 開始檢查狀態
+        function startStatusCheck() {
+            checkStatusInterval = setInterval(async () => {
+                try {
+                    const response = await fetch('/api/status');
+                    const data = await response.json();
+                    
+                    if (data.pc_status) {
+                        updatePCStatus(true);
+                        stopWaking();
+                        showMessage('電腦已成功啟動！');
+                        clearInterval(checkStatusInterval);
+                    }
+                } catch (error) {
+                    console.error('狀態檢查失敗:', error);
+                }
+            }, 5000);
+        }
+
+        // 停止等待狀態
+        function stopWaking() {
+            isWaking = false;
+            wolButton.disabled = false;
+            spinner.style.display = 'none';
+            loadingText.style.display = 'none';
+        }
+
+        // 定期檢查狀態
+        setInterval(async () => {
+            if (!isWaking) {
+                try {
+                    const response = await fetch('/api/status');
+                    const data = await response.json();
+                    updatePCStatus(data.pc_status);
+                } catch (error) {
+                    console.error('狀態更新失敗:', error);
+                }
+            }
+        }, 30000);
+
+        // 初始化
+        init();
+    </script>
+</body>
