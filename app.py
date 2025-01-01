@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, send_file
+from flask import Flask, jsonify, send_file, request
 import RPi.GPIO as GPIO
 import subprocess
 import os
@@ -6,6 +6,7 @@ import configparser
 import logging
 from logging.handlers import RotatingFileHandler
 import time
+import threading
 
 app = Flask(__name__)
 
@@ -31,10 +32,14 @@ GPIO.setup(GPIO_PIN, GPIO.OUT)
 # 初始狀態
 current_state = "AUTO"
 
+# 定時器設定
+scheduled_time = None
+timer_enabled = False
+
 def check_connection():
     try:
         response = subprocess.run(['nc', '-zv', '-w', '1', TARGET_IP, str(TARGET_PORT)],
-                                capture_output=True, check=False)
+                                 capture_output=True, check=False)
         return response.returncode == 0
     except Exception as e:
         logging.error(f"Connection check failed: {e}")
@@ -75,19 +80,15 @@ def index():
 @app.route('/api/state/<state>', methods=['POST'])
 def set_state(state):
     global current_state
-    
     if state not in ["ON", "OFF", "AUTO"]:
         return jsonify({"error": "Invalid state"}), 400
-    
     current_state = state
-    
     if state == "AUTO":
         control_service("start")
         control_gpio("OFF")
     else:
         control_service("stop")
         control_gpio(state)
-    
     return jsonify({"status": "success", "state": state})
 
 @app.route('/api/state', methods=['GET'])
@@ -112,8 +113,33 @@ def check_status():
         "pc_status": check_connection()
     })
 
+# 新增定時器路由
+@app.route('/api/timer', methods=['POST'])
+def set_timer():
+    global scheduled_time, timer_enabled
+    data = request.get_json()
+    scheduled_time = data.get('time')  # e.g. "HH:MM"
+    timer_enabled = data.get('enabled', False)
+    return jsonify({"status": "success", "scheduled_time": scheduled_time, "timer_enabled": timer_enabled})
+
+@app.route('/api/timer', methods=['GET'])
+def get_timer():
+    return jsonify({"scheduled_time": scheduled_time, "timer_enabled": timer_enabled})
+
+# 背景執行緒，用於定時檢查時間
+def schedule_checker():
+    while True:
+        if timer_enabled and scheduled_time:
+            now = time.strftime("%H:%M")
+            if now == scheduled_time:
+                wake_on_lan()
+                # 等待 60 秒避免在同一分鐘內多次觸發
+                time.sleep(60)
+        time.sleep(1)
+
 if __name__ == '__main__':
     try:
+        threading.Thread(target=schedule_checker, daemon=True).start()
         app.run(host='0.0.0.0', port=80)
     finally:
         GPIO.cleanup()

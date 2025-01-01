@@ -1,10 +1,9 @@
-<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>智慧宿舍控制面板</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
     <style>
         :root {
             --primary-color: #4361ee;
@@ -227,20 +226,76 @@
             text-align: center;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        /* New timer-section design */
+        .timer-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
         }
 
-        @media (max-width: 480px) {
-            .container {
-                margin: 1rem auto;
-            }
-            .card {
-                padding: 1.5rem;
-            }
-            .label-item {
-                font-size: 1rem;
-            }
+        .timer-input-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .timer-input-group label {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+        }
+
+        .timer-input-group input[type="time"] {
+            width: 100%;
+            padding: 0.5rem;
+            font-size: 1rem;
+            border-radius: var(--border-radius);
+            border: 1px solid #ccc;
+        }
+
+        /* Toggle switch for timer */
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 28px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider-round {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider-round:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 3px;
+            bottom: 3px;
+            background-color: #fff;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        .toggle-switch input:checked + .slider-round {
+            background-color: var(--primary-color);
+        }
+        .toggle-switch input:checked + .slider-round:before {
+            transform: translateX(22px);
+        }
+
+        .timer-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
     </style>
 </head>
@@ -251,7 +306,6 @@
                 <i class="fas fa-home"></i>
                 <h1>智慧宿舍控制面板</h1>
             </div>
-
             <div class="switch-card">
                 <div class="switch-container">
                     <div id="stateSwitch" class="switch">
@@ -267,7 +321,6 @@
                     目前模式：自動
                 </div>
             </div>
-
             <div class="status-section">
                 <div class="status-card">
                     <div class="status-info">
@@ -288,8 +341,33 @@
                 <div id="message" class="message"></div>
             </div>
         </div>
-    </div>
 
+        <!-- 新增定時功能卡片 -->
+        <div class="card">
+            <h2>定時喚醒</h2>
+            <div class="timer-section">
+                <div class="timer-input-group">
+                    <label for="scheduledTime">啟動時間 (HH:MM)</label>
+                    <input type="time" id="scheduledTime">
+                </div>
+
+                <!-- Toggle switch & Save button in one row -->
+                <div class="timer-actions">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="timerEnabled">
+                        <span class="slider-round"></span>
+                    </label>
+                    <button id="saveTimerButton" class="wol-button">
+                        <i class="fas fa-save"></i>
+                        <span>儲存</span>
+                    </button>
+                </div>
+
+                <div id="timerMessage" class="message"></div>
+            </div>
+        </div>
+    </div>
+    
     <script>
         const switchElem = document.getElementById('stateSwitch');
         const sliderElem = switchElem.querySelector('.slider');
@@ -300,6 +378,11 @@
         const spinner = document.getElementById('spinner');
         const loadingText = document.getElementById('loadingText');
         const labels = switchElem.querySelectorAll('.label-item');
+
+        const scheduledTimeInput = document.getElementById('scheduledTime');
+        const timerEnabledInput = document.getElementById('timerEnabled');
+        const saveTimerButton = document.getElementById('saveTimerButton');
+        const timerMessage = document.getElementById('timerMessage');
 
         let currentState = 'AUTO';
         let isWaking = false;
@@ -323,11 +406,8 @@
             currentState = state;
             sliderElem.style.left = positions[state];
             statusElem.textContent = `目前模式：${stateLabels[state]}`;
-            
-            // 更新滑塊顏色
+
             sliderElem.className = 'slider ' + state.toLowerCase();
-            
-            // 更新標籤狀態
             labels.forEach((label, index) => {
                 const labelStates = ['OFF', 'AUTO', 'ON'];
                 label.classList.toggle('active', labelStates[index] === state);
@@ -341,6 +421,9 @@
                 const data = await response.json();
                 updateState(data.state);
                 updatePCStatus(data.pc_status);
+
+                // 載入定時設定
+                loadTimerSettings();
             } catch (error) {
                 console.error('初始化失敗:', error);
                 showMessage('系統初始化失敗，請重新整理頁面', 'error');
@@ -402,7 +485,7 @@
                     method: 'POST'
                 });
                 const data = await response.json();
-                
+
                 if (data.status === 'success') {
                     showMessage(data.message);
                     startStatusCheck();
@@ -423,7 +506,7 @@
                 try {
                     const response = await fetch('/api/status');
                     const data = await response.json();
-                    
+
                     if (data.pc_status) {
                         updatePCStatus(true);
                         stopWaking();
@@ -457,7 +540,59 @@
             }
         }, 30000);
 
+        // 載入定時設定
+        async function loadTimerSettings() {
+            try {
+                const response = await fetch('/api/timer');
+                const data = await response.json();
+                if (data.scheduled_time) {
+                    scheduledTimeInput.value = data.scheduled_time;
+                }
+                timerEnabledInput.checked = data.timer_enabled;
+            } catch (error) {
+                console.error('無法載入定時設定:', error);
+                showTimerMessage('無法載入定時設定', 'error');
+            }
+        }
+
+        // 儲存定時設定
+        async function saveTimerSettings() {
+            try {
+                const payload = {
+                    time: scheduledTimeInput.value,
+                    enabled: timerEnabledInput.checked
+                };
+                const response = await fetch('/api/timer', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    showTimerMessage('定時設定已儲存');
+                } else {
+                    showTimerMessage('無法儲存定時設定', 'error');
+                }
+            } catch (error) {
+                console.error('儲存定時設定失敗:', error);
+                showTimerMessage('發生錯誤，請稍後重試', 'error');
+            }
+        }
+
+        // 顯示定時訊息
+        function showTimerMessage(text, type='info') {
+            timerMessage.textContent = text;
+            timerMessage.style.display = 'block';
+            timerMessage.style.backgroundColor = type === 'error' ? 'rgba(239, 35, 60, 0.1)' : 'rgba(67, 97, 238, 0.1)';
+            timerMessage.style.color = type === 'error' ? 'var(--error-color)' : 'var(--primary-color)';
+        }
+
+        saveTimerButton.addEventListener('click', saveTimerSettings);
+
         // 初始化
         init();
     </script>
 </body>
+</html>
