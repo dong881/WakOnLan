@@ -6,6 +6,7 @@
 - 監聽來自指定端口（80）的 GET 請求
 - 執行 Wake-on-LAN 指令來喚醒指定 MAC 位址的裝置
 - 發送通知請求並回應成功或失敗
+- 支援實體按鈕觸發 WOL：接在 GPIO 21 (Pin 40) 的按鈕，當偵測到高電位時自動執行 Wake-on-LAN
 
 ## 系統需求
 - Raspberry Pi (或其他 Linux 裝置)
@@ -21,8 +22,21 @@
 
 ```bash
 sudo apt update
-sudo apt install etherwake curl netcat-openbsd flask RPi.GPIO
+sudo apt install etherwake curl netcat-openbsd python3-venv
 ```
+
+### 2. 建立並設定 Python 虛擬環境
+
+在專案目錄下建立虛擬環境並安裝所需套件：
+
+```bash
+python3 -m venv dorm
+source dorm/bin/activate
+pip install -r requirements.txt
+```
+
+**注意：** 請務必先建立虛擬環境並安裝所需套件，才能正常運行此專案。
+
 ### 遵循安裝手冊完整安裝影像辨識開燈專案
 ```bash
 cd ..
@@ -30,7 +44,7 @@ git clone https://github.com/dong881/VisionDetect_SmartDorm.git
 ```
 
 
-### 2. 設定環境變數
+### 3. 設定環境變數
 
 在專案目錄下建立 .env 檔案，並加入以下內容來配置目標裝置的 MAC 位址和通知 URL：
 ```
@@ -43,14 +57,14 @@ TARGET_MAC=<目標裝置的 MAC 位址，例如：xx:xx:xx:xx:xx:xx>
 .env
 ```
 
-### 3. 執行安裝腳本
+### 4. 執行安裝腳本
 
 在專案目錄中執行以下腳本，它將自動設置服務：
 ```
 ./setup_service.sh
 ```
 
-### 4. 測試
+### 5. 測試
 
 從其他裝置發送 GET 請求以測試服務，例如：
 ```
