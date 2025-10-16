@@ -14,7 +14,7 @@ After=network.target
 
 [Service]
 WorkingDirectory=/root/WakOnLan
-ExecStart=/bin/bash -c "source ../VisionDetect_SmartDorm/dorm/bin/activate && python3 ./app.py"
+ExecStart=/bin/bash -c "source ./dorm/bin/activate && python3 ./app.py"
 Restart=always
 RestartSec=3
 

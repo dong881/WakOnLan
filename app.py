@@ -26,8 +26,10 @@ TARGET_PORT = 3389
 
 # GPIO 設定
 GPIO_PIN = 18
+BUTTON_PIN = 21  # GPIO 21 (Physical Pin 40)
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(GPIO_PIN, GPIO.OUT)
+GPIO.setup(BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)  # 預設接低電位
 
 # 初始狀態
 current_state = "AUTO"
@@ -137,9 +139,32 @@ def schedule_checker():
                 time.sleep(60)
         time.sleep(1)
 
+# 背景執行緒，用於監控實體按鈕
+def button_monitor():
+    last_button_state = GPIO.LOW
+    debounce_time = 0.05  # 50ms 防彈跳時間
+    
+    while True:
+        button_state = GPIO.input(BUTTON_PIN)
+        
+        # 檢測到高電位（按鈕按下）
+        if button_state == GPIO.HIGH and last_button_state == GPIO.LOW:
+            time.sleep(debounce_time)  # 防彈跳延遲
+            # 再次確認狀態，確保不是雜訊
+            if GPIO.input(BUTTON_PIN) == GPIO.HIGH:
+                logging.info("Button pressed - triggering Wake-on-LAN")
+                wake_on_lan()
+                # 等待按鈕釋放，避免重複觸發
+                while GPIO.input(BUTTON_PIN) == GPIO.HIGH:
+                    time.sleep(0.1)
+        
+        last_button_state = button_state
+        time.sleep(0.01)  # 10ms 掃描間隔
+
 if __name__ == '__main__':
     try:
         threading.Thread(target=schedule_checker, daemon=True).start()
+        threading.Thread(target=button_monitor, daemon=True).start()
         app.run(host='0.0.0.0', port=80)
     finally:
         GPIO.cleanup()
