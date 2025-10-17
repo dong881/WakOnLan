@@ -18,14 +18,14 @@ else
     echo "Venv 'pienv' already exists."
 fi
 
-SERVICE_FILE="/etc/systemd/system/dorm-control.service"
+SERVICE_FILE="/etc/systemd/system/WakeOnLan.service"
 
 # Step 1: Create the systemd service file with dynamic paths
 echo "Creating $SERVICE_FILE..."
 
 sudo bash -c "cat > $SERVICE_FILE" << EOL
 [Unit]
-Description=Smart Dorm Control Service
+Description=Smart WakeOnLan Service
 After=network.target
 
 [Service]
@@ -39,12 +39,12 @@ WantedBy=multi-user.target
 EOL
 
 # Step 2: Reload systemd, enable, and start the service
-echo "Reloading systemd, enabling and starting the dorm-control service..."
+echo "Reloading systemd, enabling and starting the WakeOnLan service..."
 
 sudo systemctl daemon-reload
-sudo systemctl enable dorm-control.service
-sudo systemctl start dorm-control.service
+sudo systemctl enable WakeOnLan.service
+sudo systemctl start WakeOnLan.service
 
 # Step 3: Display the service status
-echo "Displaying the status of the dorm-control service..."
-sudo systemctl status dorm-control.service
+echo "Displaying the status of the WakeOnLan service..."
+sudo systemctl status WakeOnLan.service
