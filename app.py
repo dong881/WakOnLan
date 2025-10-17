@@ -68,7 +68,7 @@ def control_gpio(state):
 
 def wake_on_lan():
     try:
-        result = subprocess.run(['etherwake', TARGET_MAC], check=True, capture_output=True)
+        result = subprocess.run(['sudo', 'etherwake', '-i', 'eth0', TARGET_MAC], check=True, capture_output=True)
         logging.info("Wake-on-LAN signal sent successfully")
         return True
     except subprocess.CalledProcessError as e:
