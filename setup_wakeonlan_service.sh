@@ -1,5 +1,8 @@
 #!/bin/bash
 
+sudo apt update
+sudo apt install etherwake curl netcat-openbsd python3-venv
+
 # Automatically get the current script directory
 SCRIPT_DIR=$(dirname "$(realpath "$0")")
 # Calculate the parent directory

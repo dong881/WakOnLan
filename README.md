@@ -12,13 +12,11 @@
 
 以下為 app.py 控制電燈與 WOL 按鈕所需的 GPIO 腳位配置：
 
-| 功能 | GPIO (BCM) | 實體腳位 | 接線說明 |
-|------|-----------|---------|---------|
-| 電燈控制 | GPIO 18 | Pin 12 | 連接至繼電器模組的輸入端，用於控制電燈開關。繼電器的 VCC 接 5V (Pin 2/4)，GND 接地 (Pin 6/9/14/20/25/30/34/39) |
-| WOL 按鈕 | GPIO 21 | Pin 40 | 連接至按鈕開關，另一端接 3.3V (Pin 1/17)。程式內部已設定下拉電阻，按下按鈕時偵測高電位觸發 WOL |
-| 電源 (5V) | - | Pin 2 或 Pin 4 | 提供 5V 電源給繼電器模組 |
-| 電源 (3.3V) | - | Pin 1 或 Pin 17 | 提供 3.3V 電源給按鈕開關 |
-| 接地 (GND) | - | Pin 6/9/14/20/25/30/34/39 | 共用接地線 |
+| 功能 | GPIO (BCM) | 實體腳位 | 重點說明 |
+|------|-----------:|---------:|---------|
+| 電燈控制 | 18 | Pin 12 | 接繼電器 IN 控燈；繼電器 VCC → Pin2/4 (5V)，GND → 任一 GND 腳位 |
+| WOL 按鈕 | 21 | Pin 40 | 按鈕另一端接 Pin1/17 (3.3V)；程式已設下拉，偵測高電位觸發 WOL |
+| 電源 / 接地 | - | Pin1/2/4 / 任一 GND | 3.3V：Pin1/17；5V：Pin2/4；GND：Pin6/9/14/20/25/30/34/39（共用） |
 
 ### 接線示意圖說明
 
@@ -53,34 +51,7 @@ Raspberry Pi Pin 40 (GPIO 21) ──> 按鈕開關一端
 
 ## 安裝步驟
 
-### 1. 安裝所需工具
-在 Raspberry Pi 上安裝 `etherwake`、`curl` 和 `netcat`：
-
-```bash
-sudo apt update
-sudo apt install etherwake curl netcat-openbsd python3-venv
-```
-
-### 2. 建立並設定 Python 虛擬環境
-
-在專案目錄下建立虛擬環境並安裝所需套件：
-
-```bash
-python3 -m venv dorm
-source dorm/bin/activate
-pip install -r requirements.txt
-```
-
-**注意：** 請務必先建立虛擬環境並安裝所需套件，才能正常運行此專案。
-
-### 遵循安裝手冊完整安裝影像辨識開燈專案
-```bash
-cd ..
-git clone https://github.com/dong881/VisionDetect_SmartDorm.git
-```
-
-
-### 3. 設定環境變數
+### 1. 設定環境變數
 
 在專案目錄下建立 .env 檔案，並加入以下內容來配置目標裝置的 MAC 位址和通知 URL：
 ```
@@ -90,17 +61,23 @@ TARGET_MAC=<目標裝置的 MAC 位址，例如：xx:xx:xx:xx:xx:xx>
 注意：為了安全性，.env 檔案不應該上傳至公開的版本控制系統，建議在專案目錄下新增 .gitignore 文件，並加入以下內容：
 
 ```
-.env
+nano .env
 ```
 
-### 4. 執行安裝腳本
-
-在專案目錄中執行以下腳本，它將自動設置服務：
+### 2. 遵循安裝手冊完整安裝影像辨識開燈專案
+```bash
+cd ~
+git clone https://github.com/dong881/VisionDetect_SmartDorm.git
 ```
-./setup_service.sh
+
+### 3. 執行安裝腳本
+
+在專案目錄中執行以下腳本，它將自動安裝所需工具、建立虛擬環境並設置服務：
+```
+./setup_wakeonlan_service.sh
 ```
 
-### 5. 測試
+### 4. 測試
 
 從其他裝置發送 GET 請求以測試服務，例如：
 ```
@@ -116,5 +93,5 @@ curl http://<RaspberryPi_IP>
 
 ### License
 ```
-MIT
+Ming Hong HSU @ 2025.
 ```
