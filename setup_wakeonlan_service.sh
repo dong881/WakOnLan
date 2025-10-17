@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sudo apt update
+sudo apt-get update --allow-releaseinfo-change
 sudo apt install etherwake curl netcat-openbsd python3-venv
 
 # Automatically get the current script directory
